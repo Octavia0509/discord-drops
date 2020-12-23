@@ -45,7 +45,7 @@ module.exports = class Drop extends EventEmitter {
                     .setTitle("🎁 » __**DROP**__")
                     .setDescription(`🥇 \`Lot\` ➔ ${options.prize} \n\n➡ **Nous avons un gagnant!** \n\n→ <@${msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().id}> ⋄ **${msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().tag}**`)
     
-                msg.embed({ embed: winEmbed });
+                msg.edit({ embed: winEmbed });
             });
         });
     };
