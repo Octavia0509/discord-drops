@@ -1,0 +1,27 @@
+{
+  "name": "discord-drops",
+  "version": "0.0.1",
+  "description": "A package that allow you to drops gifts in your discord server",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Octavia0509/discord-drops.git"
+  },
+  "keywords": [
+    "drops",
+    "discord",
+    "discord-drops"
+  ],
+  "author": "Lucas D. (Oϲτανια#5573)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Octavia0509/discord-drops/issues"
+  },
+  "homepage": "https://github.com/Octavia0509/discord-drops#readme",
+  "dependencies": {
+    "discord.js": "^12.5.1"
+  }
+}
