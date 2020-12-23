@@ -1,6 +1,6 @@
 {
   "name": "discord-drops",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A package that allow you to drops gifts in your discord server",
   "main": "main.js",
   "scripts": {
