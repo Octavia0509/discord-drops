@@ -16,6 +16,8 @@ module.exports = class Drop extends EventEmitter {
     };
 
     async create(message, options) {
+        if(!message) throw new Error("Vous devez donner un message (paramètre de votre événement)");
+        
         if(typeof options !== "object") throw new Error("Les options doivent être dans un objet.");
 
         if(!options.prize) throw new Error("Une option \"prize\" doit être précisée.");
