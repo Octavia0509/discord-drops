@@ -29,6 +29,8 @@ const drop = new Drop(client);
 
 // Création du laché :
 client.on('message', async message => {
+  if(message.author.bot) return;
+  
   const gift = await drop.create(message, {
     prize: 'Lot qui sera à gagner'
   });
