@@ -4,6 +4,8 @@ const { MessageEmbed } = require('discord.js');
 module.exports = class Drop extends EventEmitter {
 
     /**
+     * Instancie la classe 'Drop'; obligatoire par la suite
+     * @constructor
      * @param {Discord.Client} client - Représente le client
      */
 
@@ -15,6 +17,11 @@ module.exports = class Drop extends EventEmitter {
         this.client = client;
     };
 
+    /**
+     * Permet de créer un nouveau laché
+     * @param {message} message - Paramètre de votre événement 'message'
+     * @param {options} object - Objet contenant les options du laché
+     */
     async create(message, options) {
         if(!message) throw new Error("Vous devez donner un message (paramètre de votre événement)");
         
