@@ -5,7 +5,10 @@ const defaultOptions = { reaction: '🎉' };
 module.exports = class Drop extends EventEmitter {
 
     /**
+     * Instancie la classe 'Drop'; obligatoire par la suite
+     * @constructor
      * @param {Discord.Client} client - Représente le client
+     * @param {object} options - Options de la classe
      */
 
     constructor(client, options) {
@@ -18,6 +21,12 @@ module.exports = class Drop extends EventEmitter {
 
         for (const prop in options.default) this.options[prop] = options.default[prop];
     };
+
+    /**
+     * 
+     * @param {message} message - Paramètre de votre événement 'message' 
+     * @param {object} options - Options de la création du drop
+     */
 
     async create(message, options) {
         if (!message) throw new Error('Vous devez donner un message (paramètre de votre événement).');
