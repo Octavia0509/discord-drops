@@ -1,60 +1,70 @@
 const { EventEmitter } = require('events');
-const { MessageEmbed } = require('discord.js');
+
+const defaultOptions = { reaction: '🎉' };
 
 module.exports = class Drop extends EventEmitter {
 
     /**
-     * Instancie la classe 'Drop'; obligatoire par la suite
-     * @constructor
      * @param {Discord.Client} client - Représente le client
      */
 
-    constructor(client) {
-        super()
+    constructor(client, options) {
+        super();
 
-        if(!client) throw new Error("Un Discord Client doit être précisé.");
+        if (!client) throw new Error('Un Discord Client doit être précisé.');
 
         this.client = client;
+        this.options = defaultOptions;
+
+        for (const prop in options.default) this.options[prop] = options.default[prop];
     };
 
-    /**
-     * Permet de créer un nouveau laché
-     * @param {message} message - Paramètre de votre événement 'message'
-     * @param {options} object - Objet contenant les options du laché
-     */
     async create(message, options) {
-        if(!message) throw new Error("Vous devez donner un message (paramètre de votre événement)");
-        
-        if(typeof options !== "object") throw new Error("Les options doivent être dans un objet.");
+        if (!message) throw new Error('Vous devez donner un message (paramètre de votre événement).');
 
-        if(!options.prize) throw new Error("Une option \"prize\" doit être précisée.");
+        if (typeof options !== 'object') throw new Error('Les options doivent être dans un objet.');
 
-        if(typeof options.prize !== "string") throw new Error("L'option \"prize\" doit être de type String.")
-        
-        const embed = new MessageEmbed()
-            .setAuthor(message.author.tag, message.author.displayAvatarURL({ dynamic: true }))
-            .setColor("#D8FF00")
-            .setTitle("🎁 » __**DROP**__")
-            .setDescription(`😃 \`Par\` ➔ ${message.author} ⋄ **${message.author.tag}** \n🥇 \`Lot\` ➔ ${options.prize} \n\n\n→ Le premier qui clique sur la réaction 🎊 remporte le lot mis en jeu !`)
+        if (!options.prize) throw new Error('Une option prize doit être précisée.');
 
-        message.channel.send({ embed }).then(async msg => {
-            msg.react("🎊");
+        if (typeof options.prize !== 'string') throw new Error("L'option prize doit être de type String.")
+
+        message.channel.send({
+            embed: {
+                color: options.embed.color ? options.embed.color : 'BLUE',
+                author: { name: options.embed.title ? options.embed.title.replace('{prize}', options.prize).replace('{creator}', message.author.username) : 'Nouveau drop !' },
+                footer: { text: options.embed.footer ? options.embed.footer : `Soyez le premier à cliquer sur ${this.options.reaction} pour remporter le lot !` },
+                timestamp: new Date(),
+                description: options.embed.field ? options.embed.field.replace('{prize}', options.prize).replace('{creator}', message.author) : `Lot : ${options.prize} par ${message.author}`,
+            },
+        }).then(async msg => {
+            msg.react(this.options.reaction);
+
+            this.emit('newDrop', options.prize, message.author);
 
             const filter = (reaction, user) => {
-                if(user.bot) return;
-                return reaction.emoji.name === "🎊" && user.id !== message.author.id;
+                if (user.bot) return;
+                return reaction.emoji.name === this.options.reaction && user.id !== message.author.id;
             };
 
             const collector = msg.createReactionCollector(filter, { max: 1 });
 
             collector.on("collect", async () => {
-                const winEmbed = new MessageEmbed()
-                    .setAuthor(message.author.tag, message.author.displayAvatarURL({ dynamic: true }))
-                    .setColor("#D8FF00")
-                    .setTitle("🎁 » __**DROP**__")
-                    .setDescription(`🥇 \`Lot\` ➔ ${options.prize} \n\n➡ **Nous avons un gagnant!** \n\n→ <@${msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().id}> ⋄ **${msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().tag}**`)
-    
-                msg.edit({ embed: winEmbed });
+                const winner = {};
+
+                winner.id = msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().id;
+                winner.username = msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().tag;
+
+                this.emit('dropAccepted', options.prize, msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first());
+
+                msg.edit({
+                    embed: {
+                        color: options.winEmbed.color ? options.winEmbed.color : 'RED',
+                        author: { name: options.winEmbed.title ? options.winEmbed.title.replace('{prize}', options.prize).replace('{creator}', message.author.username).replace('{winner.id}', winner.id).replace('{winner.username}', winner.username) : 'Drop remporté !' },
+                        footer: { text: options.winEmbed.footer ? options.winEmbed.footer : 'Bravo au plus rapide !' },
+                        timestamp: new Date(),
+                        description: options.winEmbed.field ? options.winEmbed.field.replace('{prize}', options.prize).replace('{creator}', message.author.username).replace('{winner.id}', winner.id).replace('{winner.username}', winner.username) : `Lot : ${options.prize} remporté par ${winner.username} (${winner.id})`,
+                    },
+                });
             });
         });
     };
