@@ -8,18 +8,14 @@
 
 ### ⚡ Installation
 
-Depuis NPM :
-
-```
-npm i discord-drops
-```
+<a href="https://nodei.co/npm/discord-drops/"><img src="https://nodei.co/npm/discord-drops.png?downloads=true&downloadRank=true&stars=true"></a>
 
 ### 🎉 Utilisation
 
 Ce module **très simple d'utilisation** vous permettra de créer des lâchés de cadeaux sur votre serveur. 
 C'est-à-dire que vous lancerez un nouveau lâché, le premier qui cliquera sur la réaction remportera le lot mis en jeu.
 
-Exemple pour drop un cadeau à chaque message :
+#### __Exemple pour drop un cadeau à chaque message :__
 
 ```js
 const { Drop } = require('discord-drops');
@@ -56,13 +52,13 @@ client.on('message', async message => {
 client.login('TOKEN');
 ```
 
-Events disponibles : 
+#### __Events disponibles :__
 
 ```js
-//Quand un drop sera lancé
+// Quand un drop sera lancé
 drop.on('newDrop', (prize, user) => console.log(`Nouveau drop par ${user.username} avec comme lot ${prize} !`));
 
-//Quand un drop sera accepté
+// Quand un drop sera accepté
 drop.on('dropAccepted', (prize, user) => console.log(`Drop gagné par ${user.username} avec comme lot ${prize} !`));
 ```
 
