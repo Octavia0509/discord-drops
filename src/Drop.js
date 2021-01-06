@@ -1,6 +1,5 @@
 const { EventEmitter } = require('events');
-
-const defaultOptions = { reaction: '🎉' };
+const Discord = require('discord.js');
 
 module.exports = class Drop extends EventEmitter {
 
@@ -8,24 +7,32 @@ module.exports = class Drop extends EventEmitter {
      * Instancie la classe 'Drop'; obligatoire par la suite
      * @constructor
      * @param {Discord.Client} client - Représente le client
-     * @param {object} options - Options de la classe
+     * @param {string} reaction - Réaction ajoutée au message du drop
      */
 
-    constructor(client, options) {
+    constructor(client, reaction) {
         super();
 
         if (!client) throw new Error('Un Discord Client doit être précisé.');
 
         this.client = client;
-        this.options = defaultOptions;
 
-        for (const prop in options.default) this.options[prop] = options.default[prop];
+        if(reaction) {
+            if(typeof reaction !== "string") throw new Error("Vous devez entrer un émoji valide (String)");
+            this.reaction = reaction;
+        } else this.reaction = "🎊";
     };
 
     /**
      * 
      * @param {message} message - Paramètre de votre événement 'message' 
      * @param {object} options - Options de la création du drop
+     * * `prize` (prix du drop) - **Obligatoire**
+     * * `color` (couleur embed de base) - **Facultatif**
+     * * `title` (titre embed de base) - **Facultatif**
+     * * `footer` (footer embed de base) - **Facultatif**
+     * * `content` (description embed de base) - **Facultatif**
+     * @type {object}
      */
 
     async create(message, options) {
@@ -34,46 +41,50 @@ module.exports = class Drop extends EventEmitter {
         if (typeof options !== 'object') throw new Error('Les options doivent être dans un objet.');
 
         if (!options.prize) throw new Error('Une option prize doit être précisée.');
+        if (typeof options.prize !== 'string') throw new Error("L'option prize doit être de type String.");
 
-        if (typeof options.prize !== 'string') throw new Error("L'option prize doit être de type String.")
+        this.options = {
+            prize: options.prize,
+            color: 'color' in options ? options.color : "#FFCB59",
+            author: 'title' in options ? options.title.replace(/{prize}/g, options.prize).replace(/{creator}/g, message.author.username) : '🎊 Nouveau drop par ' + message.author.username,
+            footer: 'footer' in options ? options.footer : `Soyez le premier à cliquer sur ${this.reaction} pour remporter le lot !`,
+            content: 'content' in options ? options.content.replace(/{prize}/g, options.prize).replace(/{creator}/g, message.author) : `${message.author} fait gagner ${options.prize} dans ce nouveau drop 🎊 !`
+        }
 
         message.channel.send({
             embed: {
-                color: options.embed.color ? options.embed.color : 'BLUE',
-                author: { name: options.embed.title ? options.embed.title.replace('{prize}', options.prize).replace('{creator}', message.author.username) : 'Nouveau drop !' },
-                footer: { text: options.embed.footer ? options.embed.footer : `Soyez le premier à cliquer sur ${this.options.reaction} pour remporter le lot !` },
-                timestamp: new Date(),
-                description: options.embed.field ? options.embed.field.replace('{prize}', options.prize).replace('{creator}', message.author) : `Lot : ${options.prize} par ${message.author}`,
+                color: this.options.color,
+                author: { name: this.options.author },
+                footer: { text: this.options.footer },
+                description: this.options.content
             },
         }).then(async msg => {
-            msg.react(this.options.reaction);
+            msg.react(this.reaction).catch(() => {
+                throw new Error("Une erreur est survenue lors de l'ajout de la réaction !")
+            })
 
-            this.emit('newDrop', options.prize, message.author);
+            this.emit('dropCreate', options.prize, message.author.username);
 
             const filter = (reaction, user) => {
                 if (user.bot) return;
-                return reaction.emoji.name === this.options.reaction && user.id !== message.author.id;
+                return reaction.emoji.name === this.reaction && user.id !== message.author.id;
             };
 
             const collector = msg.createReactionCollector(filter, { max: 1 });
 
             collector.on("collect", async () => {
                 const winner = {};
-
                 winner.id = msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().id;
                 winner.username = msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().tag;
 
-                this.emit('dropAccepted', options.prize, msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first());
-
                 msg.edit({
                     embed: {
-                        color: options.winEmbed.color ? options.winEmbed.color : 'RED',
-                        author: { name: options.winEmbed.title ? options.winEmbed.title.replace('{prize}', options.prize).replace('{creator}', message.author.username).replace('{winner.id}', winner.id).replace('{winner.username}', winner.username) : 'Drop remporté !' },
-                        footer: { text: options.winEmbed.footer ? options.winEmbed.footer : 'Bravo au plus rapide !' },
-                        timestamp: new Date(),
-                        description: options.winEmbed.field ? options.winEmbed.field.replace('{prize}', options.prize).replace('{creator}', message.author.username).replace('{winner.id}', winner.id).replace('{winner.username}', winner.username) : `Lot : ${options.prize} remporté par ${winner.username} (${winner.id})`,
+                        color: '#8fffb0',
+                        author: { name: '🏆 Drop remporté !' },
+                        footer: { text: 'Félicitations ' + winner.username + " !" },
+                        description: `Le lot **${this.options.prize}** vient d'être remporté par ${message.guild.members.cache.get(winner.id)} (**${winner.id}**)`,
                     },
-                });
+                }).then(() => this.emit('dropWin', options.prize, winner.username));
             });
         });
     };
