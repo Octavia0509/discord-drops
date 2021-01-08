@@ -1,6 +1,5 @@
 const { EventEmitter } = require('events');
 const Discord = require('discord.js');
-const { time } = require('console');
 
 module.exports = class Drop extends EventEmitter {
 
