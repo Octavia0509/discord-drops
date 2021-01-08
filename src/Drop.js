@@ -1,5 +1,6 @@
 const { EventEmitter } = require('events');
 const Discord = require('discord.js');
+const { time } = require('console');
 
 module.exports = class Drop extends EventEmitter {
 
@@ -33,15 +34,21 @@ module.exports = class Drop extends EventEmitter {
      * * `footer` (footer embed de base) - **Facultatif**
      * * `content` (description embed de base) - **Facultatif**
      * @type {object}
+     * @param {number} timeout - Détruit le drop au bout du moment donné (**`millisecondes`**) - __Facultatif__
      */
 
-    async create(message, options) {
+    async create(message, options, timeout) {
         if (!message) throw new Error('Vous devez donner un message (paramètre de votre événement).');
 
         if (typeof options !== 'object') throw new Error('Les options doivent être dans un objet.');
 
         if (!options.prize) throw new Error('Une option prize doit être précisée.');
         if (typeof options.prize !== 'string') throw new Error("L'option prize doit être de type String.");
+
+        if(timeout) {
+            if(typeof timeout !== "number") throw new Error("Le paramètre timeout doit être de type String.");
+            if(timeout > 600000) throw new Error("Impossible de mettre un timeout supérieur à 600000 ms (10 minutes) !")
+        };
 
         this.options = {
             prize: options.prize,
@@ -76,7 +83,7 @@ module.exports = class Drop extends EventEmitter {
                 const winner = {};
                 winner.id = msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().id;
                 winner.username = msg.reactions.cache.first().users.cache.filter(u => !u.bot && u.id !== message.author.id).first().tag;
-
+    
                 msg.edit({
                     embed: {
                         color: '#8fffb0',
@@ -86,6 +93,19 @@ module.exports = class Drop extends EventEmitter {
                     },
                 }).then(() => this.emit('dropWin', options.prize, winner.username));
             });
+
+            if(timeout) {
+                setTimeout(async () => {
+                    await msg.delete();
+                    message.channel.send({
+                        embed: {
+                            color: this.options.color,
+                            author: { name: this.options.author },
+                            description: 'Le **drop** est terminé ! Aucun gagnant à temps...'
+                        }
+                    });
+                }, timeout);
+            }
         });
     };
 
